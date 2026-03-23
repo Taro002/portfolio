@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarooo | System OS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root {
+  --main-color: #00f7ff;
+  --secondary-color: #ff00d4;
+  --bg-dark: #020208;
+  --font-main: 'Orbitron', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Bloquer le scroll pendant le chargement */
+body.loading { overflow: hidden; }
+
+*{margin:0;padding:0;box-sizing:border-box;font-family: var(--font-main); scroll-behavior:smooth; cursor:none;}
+body{background: var(--bg-dark); color:white; overflow-x:hidden;}
+
+/* --- EFFET CRT SCANLINES (Isolé pour ne pas bloquer les clics) --- */
+.crt-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+              linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+  background-size: 100% 3px, 3px 100%;
+  z-index: 9998; pointer-events: none; opacity: 0.5;
+}
+
+#bg { position: fixed; top: 0; left: 0; z-index: -2; opacity: 0.15; width: 100%; height: 100%; }
+
+/* --- CURSOR --- */
+#cursor, #cursor-dot { position: fixed; pointer-events: none; z-index: 10005; transform: translate(-50%, -50%); transition: transform 0.1s ease-out; }
+#cursor { width: 30px; height: 30px; border: 1px solid var(--main-color); border-radius: 50%; }
+#cursor-dot { width: 4px; height: 4px; background: var(--main-color); border-radius: 50%; }
+
+/* --- NAV BAR ANIMÉE --- */
+nav { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; padding: 20px 50px; background: rgba(2,2,8,0.95); backdrop-filter: blur(10px); z-index: 2000; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.status-bar { font-family: var(--font-mono); font-size: 10px; color: var(--main-color); display: flex; gap: 20px; align-items: center; }
+.online-dot { width: 6px; height: 6px; background: #00ff41; border-radius: 50%; box-shadow: 0 0 10px #00ff41; animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.nav-links { display: flex; gap: 30px; list-style: none; }
+.nav-links li { position: relative; }
+.nav-links a { color: white; text-decoration: none; font-size: 0.7rem; letter-spacing: 2px; padding: 5px 0; transition: 0.3s; }
+.nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--main-color); box-shadow: 0 0 10px var(--main-color); transition: 0.3s ease; }
+.nav-links a:hover::after { width: 100%; }
+.nav-links a:hover { color: var(--main-color); }
+
+/* --- THEME PANEL FIX --- */
+.theme-panel { position: fixed; right: 25px; top: 50%; transform: translateY(-50%); z-index: 9999; }
+.theme-btn { width: 45px; height: 45px; border: 1px solid var(--main-color); color: var(--main-color); display: flex; justify-content: center; align-items: center; cursor: pointer; background: var(--bg-dark); box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+.color-options { display: flex; flex-direction: column; gap: 12px; max-height: 0; overflow: hidden; transition: 0.4s ease; background: rgba(2,2,8,0.8); border-radius: 20px; }
+.color-options.open { max-height: 250px; padding: 20px 10px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); }
+.color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); transition: 0.2s; }
+.color-dot:hover { transform: scale(1.2); border-color: white; }
+
+/* --- LOADER FIX --- */
+#loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 11000; transition: opacity 0.8s ease, visibility 0.8s; }
+#loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* --- CARDS & REPOS --- */
+.card { 
+    padding: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); 
+    text-decoration: none; color: white; transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); 
+    display: flex; flex-direction: column;
+}
+.card:hover { border-color: var(--main-color); box-shadow: 0 0 20px rgba(var(--main-color), 0.2); transform: translateY(-5px); }
+.repo-animate { opacity: 0; animation: decrypt 0.6s ease-out forwards; }
+@keyframes decrypt { from { opacity: 0; transform: translateY(15px); filter: blur(5px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+
+section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 100px 20px; position: relative; }
+.fade { opacity: 0; transform: translateY(30px); transition: 1s; }
+.fade.visible { opacity: 1; transform: translateY(0); }
+
+/* --- TITRES --- */
+h2 { text-shadow: 0 0 10px var(--main-color); }
+</style>
+</head>
+
+<body class="loading">
+
+<div class="crt-overlay"></div>
+<canvas id="bg"></canvas>
+<div id="cursor"></div><div id="cursor-dot"></div>
+
+<div id="loader">
+  <div class="loader-content" style="width: 280px;">
+    <div id="bootLog" style="font-family: var(--font-mono); font-size: 10px; color: var(--main-color); margin-bottom: 15px; height: 80px; overflow: hidden;"></div>
+    <div style="background: rgba(255,255,255,0.05); width: 100%; height: 2px;"><div id="load-bar-progress" style="width: 0%; height: 100%; background: var(--main-color); box-shadow: 0 0 10px var(--main-color);"></div></div>
+    <span id="percent" style="display:block; text-align:right; margin-top:8px; font-size:10px; color: var(--main-color);">0%</span>
+  </div>
+</div>
+
+<nav>
+  <div class="status-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <div class="online-dot"></div>
+        <span style="color:white; font-weight:600;">TAR000_OS</span>
+    </div>
+    <span id="clock" style="width: 80px;">00:00:00</span>
+    <span id="cpu-load">CPU: --%</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#home">HOME</a></li>
+    <li><a href="#bio">BIO</a></li>
+    <li><a href="#projects">Github Project</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<div class="theme-panel">
+  <div class="theme-btn" onclick="toggleThemeMenu()"><i class="fas fa-sliders-h"></i></div>
+  <div class="color-options" id="colorOptions">
+    <div class="color-dot" style="background: #00f7ff;" onclick="changeColor('#00f7ff')"></div>
+    <div class="color-dot" style="background: #ff00d4;" onclick="changeColor('#ff00d4')"></div>
+    <div class="color-dot" style="background: #00ff41;" onclick="changeColor('#00ff41')"></div>
+    <div class="color-dot" style="background: #f0c300;" onclick="changeColor('#f0c300')"></div>
+  </div>
+</div>
+
+<section id="home" class="fade">
+  <h2 style="font-size: clamp(40px, 12vw, 80px); letter-spacing: 15px; font-weight: 600;">TAR000</h2>
+  <p id="typewriter" style="font-family: var(--font-mono); color: var(--main-color); margin-top: 15px; font-size: 0.8rem; min-height: 1.2em;"></p>
+</section>
+
+<section id="bio" class="fade">
+  <h2 style="margin-bottom: 40px; letter-spacing: 6px;">BIO</h2>
+  <div style="max-width: 850px; width: 100%; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); padding: 40px;">
+    <p style="font-family: var(--font-mono); font-size: 0.9rem; line-height: 1.8; color: #e0e0e0; border-left: 2px solid var(--main-color); padding-left: 20px;">
+        <span style="color: var(--main-color);">> IDENTITÉ :</span> étudiant passionné par l'informatique et le codage.<br>
+        <span style="color: var(--main-color);">> MISSION :</span> Créer des project plus fou que les anciens et devenir plus fort chaque jour.<br>
+        <span style="color: var(--main-color);">> PROTOCOLES :</span> Spécialisé en hardware et petit logiciel ( html,css,Py,Js)<br><br>
+        Mon parcours est guidé par une curiosité insatiable pour l'amélioration de mon niveau en informatique.
+    </p>
+  </div>
+</section>
+
+<section id="projects" class="fade">
+  <h2 style="margin-bottom: 40px; letter-spacing: 6px;">Github Project</h2>
+  <div id="projectsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1100px;"></div>
+</section>
+
+<section id="contact" class="fade">
+  <h2 style="margin-bottom: 40px; letter-spacing: 6px;">Contact</h2>
+  <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+    <a href="https://github.com/Taro002" target="_blank" class="card" style="width: 80px; height: 80px; justify-content: center; align-items: center; font-size: 1.5rem;"><i class="fab fa-github"></i></a>
+    <a href="#" class="card" style="width: 80px; height: 80px; justify-content: center; align-items: center; font-size: 1.5rem;"><i class="fab fa-linkedin-in"></i></a>
+    <a href="#" class="card" style="width: 80px; height: 80px; justify-content: center; align-items: center; font-size: 1.5rem;"><i class="fab fa-discord"></i></a>
+    <a href="mailto:votre@mail.com" class="card" style="width: 80px; height: 80px; justify-content: center; align-items: center; font-size: 1.5rem;"><i class="fas fa-envelope"></i></a>
+  </div>
+</section>
+
+<script>
+// --- MATRIX BG FIX ---
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+const drops = Array(Math.floor(canvas.width/14)).fill(1);
+function drawMatrix() {
+    ctx.fillStyle = "rgba(2, 2, 8, 0.15)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
+    ctx.font = "14px 'JetBrains Mono'";
+    drops.forEach((y, i) => {
+        const text = Math.random() > 0.5 ? "0" : "1";
+        ctx.fillText(text, i*14, y*14);
+        if (y*14 > canvas.height && Math.random() > 0.98) drops[i] = 0;
+        drops[i]++;
+    });
+}
+setInterval(drawMatrix, 50);
+
+// --- CURSOR FIX ---
+document.addEventListener("mousemove", (e) => {
+    const c = document.getElementById("cursor");
+    const d = document.getElementById("cursor-dot");
+    c.style.left = d.style.left = e.clientX + "px";
+    c.style.top = d.style.top = e.clientY + "px";
+});
+
+// --- CHANGE COLOR FIX ---
+function changeColor(hex) {
+    document.documentElement.style.setProperty('--main-color', hex);
+    // Forcer la mise à jour des ombres sur les titres
+    document.querySelectorAll('h2').forEach(h => h.style.textShadow = `0 0 10px ${hex}`);
+}
+function toggleThemeMenu() { document.getElementById("colorOptions").classList.toggle("open"); }
+
+// --- LOADER & STATUS FIX ---
+function updateStatus() {
+    const now = new Date();
+    document.getElementById("clock").innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
+    document.getElementById("cpu-load").innerText = "CPU: " + (Math.floor(Math.random() * 10) + 10) + "%";
+}
+setInterval(updateStatus, 1000);
+
+const logs = ["> INITIATING BOOT...", "> KERNEL LOADED", "> SYSTEM_OS v2.5", "> DECRYPTING DATA...", "> ACCESS GRANTED"];
+let lIdx = 0;
+let p = 0;
+const bootInterval = setInterval(() => {
+    p += Math.floor(Math.random() * 5) + 2;
+    if(p >= 100) {
+        p = 100;
+        clearInterval(bootInterval);
+        setTimeout(() => {
+            document.getElementById("loader").classList.add("hidden");
+            document.body.classList.remove("loading");
+            startTyping();
+            fetchRepos();
+        }, 500);
+    }
+    document.getElementById("load-bar-progress").style.width = p + "%";
+    document.getElementById("percent").innerText = p + "%";
+    if(p % 20 === 0 && lIdx < logs.length) {
+        document.getElementById("bootLog").innerHTML += logs[lIdx] + "<br>";
+        lIdx++;
+    }
+}, 40);
+
+// --- TYPEWRITER FIX ---
+function startTyping() {
+    const el = document.getElementById("typewriter");
+    const txt = "> SYSTEM_ONLINE: SESSION_TARO_INITIALIZED. READY_";
+    let i = 0;
+    el.innerText = "";
+    function type() { if(i < txt.length){ el.innerText += txt.charAt(i); i++; setTimeout(type, 50); } }
+    type();
+}
+
+// --- GITHUB REPOS FIX ---
+async function fetchRepos() {
+    const grid = document.getElementById("projectsGrid");
+    try {
+        const response = await fetch('https://api.github.com/users/Taro002/repos?sort=updated');
+        const repos = await response.json();
+        grid.innerHTML = "";
+        repos.slice(0, 6).forEach((repo, index) => {
+            const card = document.createElement('a');
+            card.href = repo.html_url; card.target = "_blank"; 
+            card.className = "card repo-animate";
+            card.style.animationDelay = (index * 0.15) + "s";
+            card.innerHTML = `
+                <i class="far fa-folder-open" style="color:var(--main-color); margin-bottom:10px;"></i>
+                <h3 style="font-size:11px; margin-bottom:8px;">${repo.name.toUpperCase()}</h3>
+                <p style="font-size:9px; font-family:var(--font-mono); opacity:0.7;">${repo.description || 'Accessing encrypted data...'}</p>
+                <div style="font-size:8px; color:var(--main-color); border:1px solid var(--main-color); padding:2px 8px; margin-top:15px; width:fit-content;">${repo.language || 'BINARY'}</div>
+            `;
+            grid.appendChild(card);
+        });
+    } catch(e) { grid.innerHTML = "<p>SIGNAL_LOST: Cannot reach GitHub.</p>"; }
+}
+
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('visible') });
+}, {threshold: 0.1});
+document.querySelectorAll('.fade').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
