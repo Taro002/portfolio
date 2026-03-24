@@ -31,6 +31,12 @@ body{background: var(--bg-dark); color:white; overflow-x:hidden; min-height: 100
   z-index: -3;
 }
 
+/* --- CYBERPUNK NEON GRID BACKGROUND --- */
+#cyber-bg {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: -4;
+}
+
 .hex-grid {
   position: fixed; top:0; left:0; width:100%; height:100%;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='%23ffffff' fill-opacity='0.03' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.32v12.7l11 6.35 11-6.35V17.32L14 10.97 3 17.32z'/%3E%3C/svg%3E");
@@ -168,10 +174,70 @@ body{background: var(--bg-dark); color:white; overflow-x:hidden; min-height: 100
 .bot-l { bottom: -10px; left: -10px; border-right: 0; border-top: 0; }
 .bot-r { bottom: -10px; right: -10px; border-left: 0; border-top: 0; }
 
-/* --- CURSOR --- */
-#cursor, #cursor-dot { position: fixed; pointer-events: none; z-index: 10005; transform: translate(-50%, -50%); transition: transform 0.1s ease-out; }
-#cursor { width: 30px; height: 30px; border: 1px solid var(--main-color); border-radius: 50%; }
-#cursor-dot { width: 4px; height: 4px; background: var(--main-color); border-radius: 50%; }
+/* --- CURSOR (Cyber Diamond) --- */
+#cursor-container { position: fixed; pointer-events: none; z-index: 10005; transform: translate(-50%, -50%); }
+.cyber-cursor {
+  width: 36px; height: 36px; position: relative;
+}
+/* Diamond shape */
+.cyber-cursor .diamond {
+  position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
+  border: 1.5px solid var(--main-color);
+  transform: translate(-50%, -50%) rotate(45deg);
+  box-shadow: 0 0 8px var(--main-color), inset 0 0 4px rgba(0,247,255,0.15);
+  transition: transform 0.2s ease;
+}
+/* Glitch duplicates */
+.cyber-cursor .diamond-glitch {
+  position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
+  border: 1px solid var(--main-color);
+  transform: translate(-50%, -50%) rotate(45deg);
+  opacity: 0; animation: diamond-glitch 3s ease-in-out infinite;
+}
+.cyber-cursor .diamond-glitch.g2 { animation-delay: 1.5s; }
+@keyframes diamond-glitch {
+  0%, 100% { opacity: 0; transform: translate(-50%, -50%) rotate(45deg); }
+  5% { opacity: 0.6; transform: translate(calc(-50% + 3px), calc(-50% - 2px)) rotate(45deg); }
+  10% { opacity: 0; transform: translate(calc(-50% - 2px), calc(-50% + 1px)) rotate(45deg); }
+  15% { opacity: 0.4; transform: translate(calc(-50% + 1px), calc(-50% + 3px)) rotate(45deg); }
+  20% { opacity: 0; transform: translate(-50%, -50%) rotate(45deg); }
+}
+/* Center dot */
+.cyber-cursor .center-dot {
+  position: absolute; top: 50%; left: 50%; width: 3px; height: 3px;
+  background: var(--main-color); border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px var(--main-color), 0 0 16px var(--main-color);
+}
+/* Scan line that rotates inside */
+.cyber-cursor .scan-line {
+  position: absolute; top: 50%; left: 50%; width: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--main-color), transparent);
+  transform-origin: center; animation: scan-rotate 2s linear infinite;
+  opacity: 0.6;
+}
+@keyframes scan-rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+/* Small bracket marks */
+.cyber-cursor .bracket {
+  position: absolute; font-family: var(--font-mono); font-size: 10px;
+  color: var(--main-color); opacity: 0.5; line-height: 1;
+}
+.cyber-cursor .bracket.left { left: -4px; top: 50%; transform: translateY(-50%); }
+.cyber-cursor .bracket.right { right: -4px; top: 50%; transform: translateY(-50%); }
+.cyber-cursor .bracket.top-b { top: -2px; left: 50%; transform: translateX(-50%); }
+.cyber-cursor .bracket.bot-b { bottom: -2px; left: 50%; transform: translateX(-50%); }
+/* Click animation */
+#cursor-container.clicking .diamond {
+  transform: translate(-50%, -50%) rotate(45deg) scale(0.6);
+}
+#cursor-container.clicking .center-dot {
+  box-shadow: 0 0 15px var(--main-color), 0 0 30px var(--main-color), 0 0 45px var(--main-color);
+}
+/* Cursor trail canvas */
+#cursor-trail {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 10004;
+}
 
 /* --- NAV BAR --- */
 nav { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: rgba(2,2,8,0.9); backdrop-filter: blur(15px); z-index: 2000; border-bottom: 1px solid rgba(255,255,255,0.05); height: 60px; }
@@ -246,7 +312,7 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
 #loader.hidden { transform: translateY(-100%); opacity: 0; }
 
 @media (max-width: 768px) {
-  #cursor, #cursor-dot, .side-deco, .hud-analyzer, .radar, #terminal-window { display: none; }
+  #cursor-container, #cursor-trail, .side-deco, .hud-analyzer, .radar, #terminal-window { display: none; }
   *{ cursor: auto !important; }
 }
 </style>
@@ -254,11 +320,25 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
 
 <body class="loading">
 
+<canvas id="cyber-bg"></canvas>
 <div class="space-bg"></div>
 <div class="hex-grid"></div>
 <div class="crt-overlay"></div>
 <canvas id="bg"></canvas>
-<div id="cursor"></div><div id="cursor-dot"></div>
+<canvas id="cursor-trail"></canvas>
+<div id="cursor-container">
+  <div class="cyber-cursor">
+    <div class="diamond-glitch g1"></div>
+    <div class="diamond-glitch g2"></div>
+    <div class="diamond"></div>
+    <div class="scan-line"></div>
+    <div class="center-dot"></div>
+    <div class="bracket left">[</div>
+    <div class="bracket right">]</div>
+    <div class="bracket top-b">-</div>
+    <div class="bracket bot-b">-</div>
+  </div>
+</div>
 
 <div id="notif-container"></div>
 
@@ -623,13 +703,208 @@ function changeColor(hex) {
         el.style.color = hex;
         el.style.filter = `drop-shadow(0 0 5px ${hex})`;
     });
-    if(document.getElementById("cursor")) document.getElementById("cursor").style.borderColor = hex;
-    if(document.getElementById("cursor-dot")) document.getElementById("cursor-dot").style.background = hex;
+    // Update cyber diamond cursor colors
+    document.querySelectorAll('.cyber-cursor .diamond, .cyber-cursor .diamond-glitch').forEach(el => {
+        el.style.borderColor = hex;
+        if (el.classList.contains('diamond')) el.style.boxShadow = `0 0 8px ${hex}, inset 0 0 4px ${hex}26`;
+    });
+    document.querySelectorAll('.cyber-cursor .center-dot').forEach(el => {
+        el.style.background = hex; el.style.boxShadow = `0 0 8px ${hex}, 0 0 16px ${hex}`;
+    });
+    document.querySelectorAll('.cyber-cursor .scan-line').forEach(el => {
+        el.style.background = `linear-gradient(90deg, transparent, ${hex}, transparent)`;
+    });
+    document.querySelectorAll('.cyber-cursor .bracket').forEach(el => el.style.color = hex);
 }
 const savedColor = localStorage.getItem('userThemeColor');
 if (savedColor) changeColor(savedColor);
 
 function toggleThemeMenu() { document.getElementById("colorOptions").classList.toggle("open"); }
+
+// --- CYBERPUNK NEON GRID BACKGROUND ---
+(function() {
+    const cyberCanvas = document.getElementById("cyber-bg");
+    const cctx = cyberCanvas.getContext("2d");
+    function resizeCyber() {
+        cyberCanvas.width = window.innerWidth;
+        cyberCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCyber);
+    resizeCyber();
+
+    // Floating neon shapes
+    const shapes = [];
+    for (let i = 0; i < 12; i++) {
+        shapes.push({
+            x: Math.random(), y: Math.random(),
+            size: 15 + Math.random() * 40,
+            speed: 0.0002 + Math.random() * 0.0004,
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.01,
+            type: Math.floor(Math.random() * 3), // 0=hex, 1=triangle, 2=diamond
+            alpha: 0.03 + Math.random() * 0.06,
+            color: Math.floor(Math.random() * 3) // 0=main, 1=magenta, 2=blue
+        });
+    }
+
+    let time = 0;
+    const gridSpeed = 0.5;
+
+    function getShapeColor(colorIdx, alpha) {
+        const colors = [
+            [0, 247, 255],   // cyan
+            [255, 0, 212],   // magenta
+            [80, 120, 255]   // blue
+        ];
+        const c = colors[colorIdx];
+        return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha})`;
+    }
+
+    function drawHexagon(ctx, x, y, size, rot) {
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = rot + (Math.PI / 3) * i;
+            const px = x + size * Math.cos(angle);
+            const py = y + size * Math.sin(angle);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+    }
+
+    function drawTriangle(ctx, x, y, size, rot) {
+        ctx.beginPath();
+        for (let i = 0; i < 3; i++) {
+            const angle = rot + (Math.PI * 2 / 3) * i - Math.PI / 2;
+            const px = x + size * Math.cos(angle);
+            const py = y + size * Math.sin(angle);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+    }
+
+    function drawDiamond(ctx, x, y, size, rot) {
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+            const angle = rot + (Math.PI / 2) * i;
+            const px = x + size * Math.cos(angle);
+            const py = y + size * 0.7 * Math.sin(angle);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+    }
+
+    function animateCyber() {
+        time++;
+        const w = cyberCanvas.width;
+        const h = cyberCanvas.height;
+
+        cctx.clearRect(0, 0, w, h);
+
+        // -- Perspective grid (bottom half) --
+        const horizon = h * 0.45;
+        const gridLines = 30;
+        const gridOffset = (time * gridSpeed) % (h * 0.08);
+
+        // Horizontal lines (perspective)
+        for (let i = 0; i < gridLines; i++) {
+            const t = i / gridLines;
+            const yPos = horizon + (t * t) * (h - horizon) + gridOffset * t * t;
+            if (yPos > h) continue;
+            const alpha = 0.04 + t * 0.08;
+            cctx.beginPath();
+            cctx.moveTo(0, yPos);
+            cctx.lineTo(w, yPos);
+            cctx.strokeStyle = `rgba(0, 247, 255, ${alpha})`;
+            cctx.lineWidth = 0.5 + t;
+            cctx.stroke();
+        }
+
+        // Vertical lines (perspective, converging to center)
+        const vanishX = w / 2;
+        const numVLines = 20;
+        for (let i = -numVLines; i <= numVLines; i++) {
+            const spread = i / numVLines;
+            const bottomX = vanishX + spread * w * 0.8;
+            const alpha = 0.03 + Math.abs(spread) * 0.05;
+            cctx.beginPath();
+            cctx.moveTo(vanishX, horizon);
+            cctx.lineTo(bottomX, h);
+            cctx.strokeStyle = `rgba(0, 247, 255, ${alpha})`;
+            cctx.lineWidth = 0.5;
+            cctx.stroke();
+        }
+
+        // Horizon glow
+        const horizGrad = cctx.createLinearGradient(0, horizon - 30, 0, horizon + 30);
+        horizGrad.addColorStop(0, 'rgba(0, 247, 255, 0)');
+        horizGrad.addColorStop(0.5, 'rgba(0, 247, 255, 0.06)');
+        horizGrad.addColorStop(1, 'rgba(0, 247, 255, 0)');
+        cctx.fillStyle = horizGrad;
+        cctx.fillRect(0, horizon - 30, w, 60);
+
+        // Neon sun/circle at horizon
+        const sunGrad = cctx.createRadialGradient(vanishX, horizon, 0, vanishX, horizon, 120);
+        sunGrad.addColorStop(0, 'rgba(255, 0, 212, 0.08)');
+        sunGrad.addColorStop(0.5, 'rgba(255, 0, 212, 0.03)');
+        sunGrad.addColorStop(1, 'rgba(255, 0, 212, 0)');
+        cctx.beginPath();
+        cctx.arc(vanishX, horizon, 120, 0, Math.PI * 2);
+        cctx.fillStyle = sunGrad;
+        cctx.fill();
+
+        // Horizontal scan lines across the sun
+        for (let i = 0; i < 5; i++) {
+            const sy = horizon - 40 + i * 18;
+            cctx.beginPath();
+            cctx.moveTo(vanishX - 100, sy);
+            cctx.lineTo(vanishX + 100, sy);
+            cctx.strokeStyle = 'rgba(255, 0, 212, 0.1)';
+            cctx.lineWidth = 2;
+            cctx.stroke();
+        }
+
+        // -- Floating geometric shapes --
+        shapes.forEach((s, i) => {
+            s.y -= s.speed;
+            s.rotation += s.rotSpeed;
+            if (s.y < -0.1) { s.y = 1.1; s.x = Math.random(); }
+
+            const sx = s.x * w;
+            const sy = s.y * h;
+            const pulse = 1 + 0.2 * Math.sin(time * 0.015 + i);
+
+            cctx.save();
+            if (s.type === 0) drawHexagon(cctx, sx, sy, s.size * pulse, s.rotation);
+            else if (s.type === 1) drawTriangle(cctx, sx, sy, s.size * pulse, s.rotation);
+            else drawDiamond(cctx, sx, sy, s.size * pulse, s.rotation);
+
+            cctx.strokeStyle = getShapeColor(s.color, s.alpha * pulse);
+            cctx.lineWidth = 1;
+            cctx.stroke();
+
+            // Inner glow
+            cctx.fillStyle = getShapeColor(s.color, s.alpha * 0.3 * pulse);
+            cctx.fill();
+            cctx.restore();
+        });
+
+        // -- Data stream particles rising --
+        for (let i = 0; i < 8; i++) {
+            const px = (w * 0.1) + (i / 8) * (w * 0.8);
+            const offset = (time * 2 + i * 137) % h;
+            const py = h - offset;
+            if (py < horizon) continue;
+            const size = 1 + Math.sin(time * 0.05 + i) * 0.5;
+            cctx.beginPath();
+            cctx.arc(px + Math.sin(time * 0.01 + i * 3) * 10, py, size, 0, Math.PI * 2);
+            cctx.fillStyle = `rgba(0, 247, 255, ${0.15 + Math.sin(time * 0.03 + i) * 0.1})`;
+            cctx.fill();
+        }
+
+        requestAnimationFrame(animateCyber);
+    }
+    animateCyber();
+})();
 
 // --- MATRIX ---
 const canvas = document.getElementById("bg");
@@ -650,13 +925,68 @@ function draw() {
 }
 setInterval(draw, 50);
 
-// --- CURSOR ---
+// --- CURSOR (Cyber Diamond + Glitch Trail) ---
 if (window.innerWidth > 768) {
+    const cursorContainer = document.getElementById("cursor-container");
+    const trailCanvas = document.getElementById("cursor-trail");
+    const trailCtx = trailCanvas.getContext("2d");
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+    const trail = [];
+    const TRAIL_LENGTH = 15;
+
+    function resizeTrail() {
+        trailCanvas.width = window.innerWidth;
+        trailCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeTrail);
+    resizeTrail();
+
     document.addEventListener("mousemove", (e) => {
-        const c = document.getElementById("cursor"), d = document.getElementById("cursor-dot");
-        c.style.left = d.style.left = e.clientX + "px";
-        c.style.top = d.style.top = e.clientY + "px";
+        mouseX = e.clientX;
+        mouseY = e.clientY;
     });
+
+    document.addEventListener("mousedown", () => {
+        cursorContainer.classList.add("clicking");
+        setTimeout(() => cursorContainer.classList.remove("clicking"), 200);
+    });
+
+    function animateCursor() {
+        cursorX += (mouseX - cursorX) * 0.18;
+        cursorY += (mouseY - cursorY) * 0.18;
+        cursorContainer.style.left = cursorX + "px";
+        cursorContainer.style.top = cursorY + "px";
+
+        // Glitch trail - small diamond shapes that fade
+        trail.push({ x: cursorX, y: cursorY, life: 1 });
+        if (trail.length > TRAIL_LENGTH) trail.shift();
+
+        trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+        const mainColor = getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim();
+        const r = parseInt(mainColor.slice(1,3), 16) || 0;
+        const g = parseInt(mainColor.slice(3,5), 16) || 0;
+        const b = parseInt(mainColor.slice(5,7), 16) || 0;
+
+        for (let i = 0; i < trail.length; i++) {
+            const t = trail[i];
+            const progress = i / trail.length;
+            const size = 2 + progress * 4;
+            const alpha = progress * 0.3;
+
+            // Draw small diamonds for trail
+            trailCtx.save();
+            trailCtx.translate(t.x, t.y);
+            trailCtx.rotate(Math.PI / 4);
+            trailCtx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            trailCtx.lineWidth = 0.5;
+            trailCtx.strokeRect(-size/2, -size/2, size, size);
+            trailCtx.restore();
+        }
+
+        requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
 }
 
 // --- STATUS ---
