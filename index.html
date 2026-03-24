@@ -31,6 +31,12 @@ body{background: var(--bg-dark); color:white; overflow-x:hidden; min-height: 100
   z-index: -3;
 }
 
+/* --- AURORA / NEBULA ANIMATED BACKGROUND --- */
+#aurora-bg {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: -4; opacity: 0.6;
+}
+
 .hex-grid {
   position: fixed; top:0; left:0; width:100%; height:100%;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='%23ffffff' fill-opacity='0.03' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.32v12.7l11 6.35 11-6.35V17.32L14 10.97 3 17.32z'/%3E%3C/svg%3E");
@@ -168,10 +174,62 @@ body{background: var(--bg-dark); color:white; overflow-x:hidden; min-height: 100
 .bot-l { bottom: -10px; left: -10px; border-right: 0; border-top: 0; }
 .bot-r { bottom: -10px; right: -10px; border-left: 0; border-top: 0; }
 
-/* --- CURSOR --- */
-#cursor, #cursor-dot { position: fixed; pointer-events: none; z-index: 10005; transform: translate(-50%, -50%); transition: transform 0.1s ease-out; }
-#cursor { width: 30px; height: 30px; border: 1px solid var(--main-color); border-radius: 50%; }
-#cursor-dot { width: 4px; height: 4px; background: var(--main-color); border-radius: 50%; }
+/* --- CURSOR (Crosshair HUD) --- */
+#cursor-container { position: fixed; pointer-events: none; z-index: 10005; transform: translate(-50%, -50%); }
+#cursor-crosshair {
+  width: 40px; height: 40px; position: relative;
+}
+#cursor-crosshair .cross-h, #cursor-crosshair .cross-v {
+  position: absolute; background: var(--main-color); box-shadow: 0 0 6px var(--main-color);
+}
+#cursor-crosshair .cross-h { width: 100%; height: 1px; top: 50%; left: 0; transform: translateY(-50%); }
+#cursor-crosshair .cross-v { width: 1px; height: 100%; left: 50%; top: 0; transform: translateX(-50%); }
+#cursor-crosshair .ring {
+  position: absolute; top: 50%; left: 50%; width: 28px; height: 28px;
+  border: 1.5px solid var(--main-color); border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px var(--main-color), inset 0 0 8px rgba(0,247,255,0.1);
+  animation: cursor-ring-pulse 2s ease-in-out infinite;
+}
+#cursor-crosshair .ring-outer {
+  position: absolute; top: 50%; left: 50%; width: 38px; height: 38px;
+  border: 1px solid var(--main-color); border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.3; animation: cursor-ring-rotate 4s linear infinite;
+  border-top-color: transparent; border-bottom-color: transparent;
+}
+#cursor-crosshair .dot {
+  position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
+  background: var(--main-color); border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px var(--main-color), 0 0 20px var(--main-color);
+}
+#cursor-crosshair .corner-mark {
+  position: absolute; width: 6px; height: 6px;
+  border: 1px solid var(--main-color); opacity: 0.6;
+}
+#cursor-crosshair .corner-mark.tl { top: 2px; left: 2px; border-right: none; border-bottom: none; }
+#cursor-crosshair .corner-mark.tr { top: 2px; right: 2px; border-left: none; border-bottom: none; }
+#cursor-crosshair .corner-mark.bl { bottom: 2px; left: 2px; border-right: none; border-top: none; }
+#cursor-crosshair .corner-mark.br { bottom: 2px; right: 2px; border-left: none; border-top: none; }
+@keyframes cursor-ring-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
+@keyframes cursor-ring-rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+#cursor-container.clicking #cursor-crosshair .ring {
+  animation: cursor-click 0.3s ease-out;
+}
+@keyframes cursor-click {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(0.7); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+/* Cursor trail canvas */
+#cursor-trail {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 10004;
+}
 
 /* --- NAV BAR --- */
 nav { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: rgba(2,2,8,0.9); backdrop-filter: blur(15px); z-index: 2000; border-bottom: 1px solid rgba(255,255,255,0.05); height: 60px; }
@@ -246,7 +304,7 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
 #loader.hidden { transform: translateY(-100%); opacity: 0; }
 
 @media (max-width: 768px) {
-  #cursor, #cursor-dot, .side-deco, .hud-analyzer, .radar, #terminal-window { display: none; }
+  #cursor-container, #cursor-trail, .side-deco, .hud-analyzer, .radar, #terminal-window { display: none; }
   *{ cursor: auto !important; }
 }
 </style>
@@ -254,11 +312,25 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
 
 <body class="loading">
 
+<canvas id="aurora-bg"></canvas>
 <div class="space-bg"></div>
 <div class="hex-grid"></div>
 <div class="crt-overlay"></div>
 <canvas id="bg"></canvas>
-<div id="cursor"></div><div id="cursor-dot"></div>
+<canvas id="cursor-trail"></canvas>
+<div id="cursor-container">
+  <div id="cursor-crosshair">
+    <div class="cross-h"></div>
+    <div class="cross-v"></div>
+    <div class="ring-outer"></div>
+    <div class="ring"></div>
+    <div class="dot"></div>
+    <div class="corner-mark tl"></div>
+    <div class="corner-mark tr"></div>
+    <div class="corner-mark bl"></div>
+    <div class="corner-mark br"></div>
+  </div>
+</div>
 
 <div id="notif-container"></div>
 
@@ -623,13 +695,112 @@ function changeColor(hex) {
         el.style.color = hex;
         el.style.filter = `drop-shadow(0 0 5px ${hex})`;
     });
-    if(document.getElementById("cursor")) document.getElementById("cursor").style.borderColor = hex;
-    if(document.getElementById("cursor-dot")) document.getElementById("cursor-dot").style.background = hex;
+    // Update crosshair cursor colors
+    document.querySelectorAll('#cursor-crosshair .cross-h, #cursor-crosshair .cross-v').forEach(el => {
+        el.style.background = hex; el.style.boxShadow = `0 0 6px ${hex}`;
+    });
+    document.querySelectorAll('#cursor-crosshair .ring').forEach(el => {
+        el.style.borderColor = hex; el.style.boxShadow = `0 0 8px ${hex}, inset 0 0 8px ${hex}33`;
+    });
+    document.querySelectorAll('#cursor-crosshair .ring-outer').forEach(el => {
+        el.style.borderColor = hex; el.style.borderTopColor = 'transparent'; el.style.borderBottomColor = 'transparent';
+    });
+    document.querySelectorAll('#cursor-crosshair .dot').forEach(el => {
+        el.style.background = hex; el.style.boxShadow = `0 0 10px ${hex}, 0 0 20px ${hex}`;
+    });
+    document.querySelectorAll('#cursor-crosshair .corner-mark').forEach(el => el.style.borderColor = hex);
 }
 const savedColor = localStorage.getItem('userThemeColor');
 if (savedColor) changeColor(savedColor);
 
 function toggleThemeMenu() { document.getElementById("colorOptions").classList.toggle("open"); }
+
+// --- AURORA / NEBULA ANIMATED BACKGROUND ---
+(function() {
+    const auroraCanvas = document.getElementById("aurora-bg");
+    const actx = auroraCanvas.getContext("2d");
+    function resizeAurora() {
+        auroraCanvas.width = window.innerWidth;
+        auroraCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeAurora);
+    resizeAurora();
+
+    // Floating blobs
+    const blobs = [
+        { x: 0.2, y: 0.3, vx: 0.0003, vy: 0.0002, radius: 0.35, color: [0, 247, 255] },
+        { x: 0.8, y: 0.7, vx: -0.0002, vy: 0.0003, radius: 0.3, color: [255, 0, 212] },
+        { x: 0.5, y: 0.5, vx: 0.0004, vy: -0.0001, radius: 0.4, color: [0, 150, 255] },
+        { x: 0.3, y: 0.8, vx: -0.0003, vy: -0.0002, radius: 0.25, color: [100, 0, 255] },
+        { x: 0.7, y: 0.2, vx: 0.0002, vy: 0.0004, radius: 0.3, color: [0, 255, 180] },
+    ];
+
+    let time = 0;
+
+    function animateAurora() {
+        time++;
+        const w = auroraCanvas.width;
+        const h = auroraCanvas.height;
+
+        // Clear with a very dark fill for the trailing effect
+        actx.fillStyle = "rgba(2, 2, 8, 0.03)";
+        actx.fillRect(0, 0, w, h);
+
+        // Every 60 frames, fully clear to prevent buildup
+        if (time % 60 === 0) {
+            actx.clearRect(0, 0, w, h);
+        }
+
+        blobs.forEach((blob, i) => {
+            // Organic movement using sine waves
+            blob.x += blob.vx + Math.sin(time * 0.001 + i) * 0.0001;
+            blob.y += blob.vy + Math.cos(time * 0.0012 + i * 2) * 0.0001;
+
+            // Wrap around
+            if (blob.x < -0.2) blob.x = 1.2;
+            if (blob.x > 1.2) blob.x = -0.2;
+            if (blob.y < -0.2) blob.y = 1.2;
+            if (blob.y > 1.2) blob.y = -0.2;
+
+            const cx = blob.x * w;
+            const cy = blob.y * h;
+            const r = blob.radius * Math.min(w, h);
+
+            // Pulsing radius
+            const pulse = 1 + 0.15 * Math.sin(time * 0.008 + i * 1.5);
+
+            const gradient = actx.createRadialGradient(cx, cy, 0, cx, cy, r * pulse);
+            const [cr, cg, cb] = blob.color;
+            gradient.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, 0.08)`);
+            gradient.addColorStop(0.4, `rgba(${cr}, ${cg}, ${cb}, 0.04)`);
+            gradient.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
+
+            actx.beginPath();
+            actx.arc(cx, cy, r * pulse, 0, Math.PI * 2);
+            actx.fillStyle = gradient;
+            actx.fill();
+        });
+
+        // Aurora wave streaks
+        for (let i = 0; i < 3; i++) {
+            actx.beginPath();
+            const yBase = h * (0.3 + i * 0.2);
+            actx.moveTo(0, yBase);
+            for (let x = 0; x <= w; x += 10) {
+                const wave = Math.sin(x * 0.003 + time * 0.005 + i * 2) * 50 +
+                             Math.sin(x * 0.007 + time * 0.003 + i) * 30;
+                actx.lineTo(x, yBase + wave);
+            }
+            const waveColor = blobs[i].color;
+            actx.strokeStyle = `rgba(${waveColor[0]}, ${waveColor[1]}, ${waveColor[2]}, 0.03)`;
+            actx.lineWidth = 40 + i * 20;
+            actx.stroke();
+        }
+
+        requestAnimationFrame(animateAurora);
+    }
+    animateAurora();
+})();
 
 // --- MATRIX ---
 const canvas = document.getElementById("bg");
@@ -650,13 +821,78 @@ function draw() {
 }
 setInterval(draw, 50);
 
-// --- CURSOR ---
+// --- CURSOR (Crosshair + Trail) ---
 if (window.innerWidth > 768) {
+    const cursorContainer = document.getElementById("cursor-container");
+    const trailCanvas = document.getElementById("cursor-trail");
+    const trailCtx = trailCanvas.getContext("2d");
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+    const trail = [];
+    const TRAIL_LENGTH = 20;
+
+    function resizeTrail() {
+        trailCanvas.width = window.innerWidth;
+        trailCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeTrail);
+    resizeTrail();
+
     document.addEventListener("mousemove", (e) => {
-        const c = document.getElementById("cursor"), d = document.getElementById("cursor-dot");
-        c.style.left = d.style.left = e.clientX + "px";
-        c.style.top = d.style.top = e.clientY + "px";
+        mouseX = e.clientX;
+        mouseY = e.clientY;
     });
+
+    document.addEventListener("mousedown", () => {
+        cursorContainer.classList.add("clicking");
+        setTimeout(() => cursorContainer.classList.remove("clicking"), 300);
+    });
+
+    function animateCursor() {
+        // Smooth follow
+        cursorX += (mouseX - cursorX) * 0.15;
+        cursorY += (mouseY - cursorY) * 0.15;
+        cursorContainer.style.left = cursorX + "px";
+        cursorContainer.style.top = cursorY + "px";
+
+        // Trail particles
+        trail.push({ x: cursorX, y: cursorY, alpha: 1, size: 2 });
+        if (trail.length > TRAIL_LENGTH) trail.shift();
+
+        // Draw trail
+        trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+        const mainColor = getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim();
+        // Parse hex color to rgb
+        const r = parseInt(mainColor.slice(1,3), 16) || 0;
+        const g = parseInt(mainColor.slice(3,5), 16) || 0;
+        const b = parseInt(mainColor.slice(5,7), 16) || 0;
+
+        for (let i = 0; i < trail.length; i++) {
+            const t = trail[i];
+            const progress = i / trail.length;
+            t.alpha = progress * 0.4;
+            t.size = progress * 3;
+            trailCtx.beginPath();
+            trailCtx.arc(t.x, t.y, t.size, 0, Math.PI * 2);
+            trailCtx.fillStyle = `rgba(${r}, ${g}, ${b}, ${t.alpha})`;
+            trailCtx.fill();
+        }
+
+        // Connect trail dots with a fading line
+        if (trail.length > 1) {
+            trailCtx.beginPath();
+            trailCtx.moveTo(trail[0].x, trail[0].y);
+            for (let i = 1; i < trail.length; i++) {
+                trailCtx.lineTo(trail[i].x, trail[i].y);
+            }
+            trailCtx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.15)`;
+            trailCtx.lineWidth = 1;
+            trailCtx.stroke();
+        }
+
+        requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
 }
 
 // --- STATUS ---
