@@ -84,6 +84,23 @@ body{background: var(--bg-dark); color:white; overflow-x:hidden; min-height: 100
 }
 .term-output { margin-bottom: 8px; line-height: 1.4; }
 
+/* --- SNAKE GAME CSS --- */
+#game-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(2, 2, 8, 0.98); z-index: 15000;
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    backdrop-filter: blur(20px);
+}
+#snake-canvas {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--main-color);
+    box-shadow: 0 0 20px rgba(0, 247, 255, 0.2);
+}
+.game-ui {
+    margin-top: 20px; font-family: var(--font-mono); color: var(--main-color);
+    display: flex; gap: 30px; align-items: center;
+}
+
 /* --- HUD ELEMENTS --- */
 .hud-analyzer {
   position: fixed; bottom: 20px; right: 20px; width: 120px; height: 60px;
@@ -128,6 +145,14 @@ body{background: var(--bg-dark); color:white; overflow-x:hidden; min-height: 100
 .skill-label { font-family: var(--font-mono); font-size: 9px; color: var(--main-color); margin-bottom: 12px; display: block; letter-spacing: 1px; opacity: 0.8; }
 .skill-progress { width: 100%; height: 4px; background: rgba(255,255,255,0.05); margin-top: 12px; position: relative; overflow: hidden; }
 .skill-progress-fill { height: 100%; background: var(--main-color); box-shadow: 0 0 15px var(--main-color); transition: width 1.5s ease-in-out; }
+
+/* --- TIMELINE CSS --- */
+.timeline { position: relative; max-width: 800px; margin: 40px auto; padding-left: 30px; border-left: 2px solid rgba(0, 247, 255, 0.2); }
+.timeline-item { position: relative; margin-bottom: 40px; padding-left: 20px; text-align: left; }
+.timeline-item::before { content: ""; position: absolute; left: -39px; top: 5px; width: 16px; height: 16px; background: var(--bg-dark); border: 2px solid var(--main-color); border-radius: 50%; box-shadow: 0 0 10px var(--main-color); }
+.timeline-date { font-family: var(--font-mono); font-size: 10px; color: var(--main-color); margin-bottom: 5px; display: block; }
+.timeline-title { font-size: 14px; color: white; margin-bottom: 5px; letter-spacing: 1px; }
+.timeline-desc { font-family: var(--font-mono); font-size: 11px; color: #aaa; line-height: 1.5; }
 
 /* --- SIDE DATA --- */
 .side-deco {
@@ -198,6 +223,19 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
 
 <div id="notif-container"></div>
 
+<div id="game-overlay">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="letter-spacing: 5px; color: var(--main-color); margin-bottom: 10px;">SNAKE_PROTOCOL.EXE</h2>
+        <div style="font-family: var(--font-mono); font-size: 10px; opacity: 0.6;">UTILISEZ LES FLÈCHES POUR DIRIGER</div>
+    </div>
+    <canvas id="snake-canvas" width="400" height="400"></canvas>
+    <div class="game-ui">
+        <span>SCORE: <span id="snake-score" style="font-weight: bold;">0</span></span>
+        <span>RECORD: <span id="snake-high" style="font-weight: bold; color: #ff00d4;">0</span></span>
+        <button onclick="stopSnake()" style="background: transparent; border: 1px solid var(--main-color); color: var(--main-color); padding: 5px 15px; font-family: var(--font-mono); font-size: 10px; cursor: pointer;">TERMINATE</button>
+    </div>
+</div>
+
 <div id="terminal-window">
     <div class="term-header">
         <span>TAR000_TERMINAL.EXE</span>
@@ -237,7 +275,7 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
 
 <nav>
   <div class="status-bar">
-    <div style="display:flex; align-items:center; gap:8px;">
+    <div style="display:flex; align-items:center; gap:8px; cursor: pointer;" onclick="startSnake()">
         <div class="online-dot"></div>
         <span style="color:white; font-weight:600; letter-spacing: 1px;">TAR000_OS</span>
     </div>
@@ -248,6 +286,7 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
     <li><a href="#home" onmouseenter="playHover()">HOME</a></li>
     <li><a href="#bio" onmouseenter="playHover()">BIO</a></li>
     <li><a href="#skills" onmouseenter="playHover()">SKILLS</a></li>
+    <li><a href="#experience" onmouseenter="playHover()">EXPERIENCE</a></li>
     <li><a href="#projects" onmouseenter="playHover()">PROJECTS</a></li>
     <li><a href="#contact" onmouseenter="playHover()">CONTACT</a></li>
   </ul>
@@ -293,64 +332,65 @@ section { min-height: 100vh; width: 100%; display: flex; flex-direction: column;
 </section>
 
 <section id="skills" class="fade">
+    <div class="section-content">
+      <span class="data-tag">Core: Skill_Matrix.sys</span>
+      <h2 style="margin-bottom: 50px; letter-spacing: 10px;">// ABILITIES</h2>
+      <div class="skills-container">
+        <div class="skill-box" onmouseenter="playHover()">
+            <span class="skill-label">LANG_01</span>
+            <div class="skill-header"><i class="fab fa-python"></i><h4 style="font-size: 14px;">PYTHON CORE</h4></div>
+            <div class="skill-progress"><div class="skill-progress-fill" style="width: 85%;"></div></div>
+        </div>
+        <div class="skill-box" onmouseenter="playHover()">
+            <span class="skill-label">LANG_02</span>
+            <div class="skill-header"><i class="fab fa-js"></i><h4 style="font-size: 14px;">JAVASCRIPT</h4></div>
+            <div class="skill-progress"><div class="skill-progress-fill" style="width: 78%;"></div></div>
+        </div>
+        <div class="skill-box" onmouseenter="playHover()">
+            <span class="skill-label">WEB_DEV</span>
+            <div class="skill-header"><i class="fas fa-globe"></i><h4 style="font-size: 14px;">HTML5 / CSS3</h4></div>
+            <div class="skill-progress"><div class="skill-progress-fill" style="width: 92%;"></div></div>
+        </div>
+        <div class="skill-box" onmouseenter="playHover()">
+            <span class="skill-label">DATA_01</span>
+            <div class="skill-header"><i class="fas fa-database"></i><h4 style="font-size: 14px;">SQL / DATABASE</h4></div>
+            <div class="skill-progress"><div class="skill-progress-fill" style="width: 65%;"></div></div>
+        </div>
+        <div class="skill-box" onmouseenter="playHover()">
+            <span class="skill-label">SYS_ADMIN</span>
+            <div class="skill-header"><i class="fas fa-terminal"></i><h4 style="font-size: 14px;">LINUX / BASH</h4></div>
+            <div class="skill-progress"><div class="skill-progress-fill" style="width: 70%;"></div></div>
+        </div>
+        <div class="skill-box" onmouseenter="playHover()">
+            <span class="skill-label">HW_ENG</span>
+            <div class="skill-header"><i class="fas fa-microchip"></i><h4 style="font-size: 14px;">HARDWARE / IOT</h4></div>
+            <div class="skill-progress"><div class="skill-progress-fill" style="width: 80%;"></div></div>
+        </div>
+      </div>
+    </div>
+</section>
+
+<section id="experience" class="fade">
   <div class="section-content">
-    <span class="data-tag">Core: Skill_Matrix.sys</span>
-    <h2 style="margin-bottom: 50px; letter-spacing: 10px;">// ABILITIES</h2>
+    <span class="data-tag">Accessing: logs_history.db</span>
+    <h2 style="margin-bottom: 50px; letter-spacing: 10px;">// TIMELINE</h2>
     
-    <div class="skills-container">
-      <div class="skill-box" onmouseenter="playHover()">
-        <span class="skill-label">LANGUAGES_01</span>
-        <div class="skill-header">
-            <i class="fas fa-code"></i>
-            <h4 style="font-size: 14px;">PYTHON / JS</h4>
+    <div class="timeline">
+        <div class="timeline-item fade">
+            <span class="timeline-date">2024 - PRÉSENT</span>
+            <h4 class="timeline-title">STUDENT_DEVELOPEUR</h4>
+            <p class="timeline-desc">Spécialisation dans les architectures web et l'automatisation systeme.</p>
         </div>
-        <div class="skill-progress"><div class="skill-progress-fill" style="width: 88%;"></div></div>
-      </div>
-      
-      <div class="skill-box" onmouseenter="playHover()">
-        <span class="skill-label">INFRASTRUCTURE_02</span>
-        <div class="skill-header">
-            <i class="fab fa-linux"></i>
-            <h4 style="font-size: 14px;">LINUX / SHELL</h4>
+        <div class="timeline-item fade">
+            <span class="timeline-date">2023</span>
+            <h4 class="timeline-title">INITIATION_CYBERSEC</h4>
+            <p class="timeline-desc">Apprentissage des bases de la sécurité réseau et des tests de pénétration.</p>
         </div>
-        <div class="skill-progress"><div class="skill-progress-fill" style="width: 82%;"></div></div>
-      </div>
-
-      <div class="skill-box" onmouseenter="playHover()">
-        <span class="skill-label">HARDWARE_03</span>
-        <div class="skill-header">
-            <i class="fas fa-microchip"></i>
-            <h4 style="font-size: 14px;">SYSTEM ARCH.</h4>
+        <div class="timeline-item fade">
+            <span class="timeline-date">2022</span>
+            <h4 class="timeline-title">HARDWARE_ASSEMBLY</h4>
+            <p class="timeline-desc">Maintenance et assemblage de configurations informatiques haute performance.</p>
         </div>
-        <div class="skill-progress"><div class="skill-progress-fill" style="width: 75%;"></div></div>
-      </div>
-
-      <div class="skill-box" onmouseenter="playHover()">
-        <span class="skill-label">WEB_DEV_04</span>
-        <div class="skill-header">
-            <i class="fas fa-globe"></i>
-            <h4 style="font-size: 14px;">HTML5 / CSS3</h4>
-        </div>
-        <div class="skill-progress"><div class="skill-progress-fill" style="width: 92%;"></div></div>
-      </div>
-
-      <div class="skill-box" onmouseenter="playHover()">
-        <span class="skill-label">SECURITY_05</span>
-        <div class="skill-header">
-            <i class="fas fa-user-shield"></i>
-            <h4 style="font-size: 14px;">CYBERSECURITY</h4>
-        </div>
-        <div class="skill-progress"><div class="skill-progress-fill" style="width: 68%;"></div></div>
-      </div>
-
-      <div class="skill-box" onmouseenter="playHover()">
-        <span class="skill-label">VIRTUALIZATION_06</span>
-        <div class="skill-header">
-            <i class="fab fa-docker"></i>
-            <h4 style="font-size: 14px;">DOCKER / VM</h4>
-        </div>
-        <div class="skill-progress"><div class="skill-progress-fill" style="width: 62%;"></div></div>
-      </div>
     </div>
   </div>
 </section>
@@ -398,6 +438,89 @@ function notify(text, icon = "fa-info-circle") {
     }, 4000);
 }
 
+// --- SNAKE GAME LOGIC ---
+const snakeCanvas = document.getElementById("snake-canvas");
+const snakeCtx = snakeCanvas.getContext("2d");
+const grid = 20;
+let snake = [{x: 160, y: 160}];
+let apple = {x: 320, y: 320};
+let dx = grid, dy = 0;
+let snakeScore = 0;
+let snakeGameActive = false;
+let gameLoop;
+let highScore = localStorage.getItem("snakeRecord") || 0;
+
+function startSnake() {
+    document.getElementById("game-overlay").style.display = "flex";
+    document.getElementById("snake-high").innerText = highScore;
+    snakeGameActive = true;
+    snakeScore = 0;
+    snake = [{x: 160, y: 160}];
+    dx = grid; dy = 0;
+    document.getElementById("snake-score").innerText = snakeScore;
+    notify("Snake Protocol activé", "fa-snake");
+    gameLoop = setInterval(updateSnake, 100);
+}
+
+function stopSnake() {
+    clearInterval(gameLoop);
+    snakeGameActive = false;
+    document.getElementById("game-overlay").style.display = "none";
+}
+
+document.addEventListener("keydown", (e) => {
+    if (!snakeGameActive) return;
+    if (e.key === "ArrowUp" && dy === 0) { dx = 0; dy = -grid; }
+    if (e.key === "ArrowDown" && dy === 0) { dx = 0; dy = grid; }
+    if (e.key === "ArrowLeft" && dx === 0) { dx = -grid; dy = 0; }
+    if (e.key === "ArrowRight" && dx === 0) { dx = grid; dy = 0; }
+});
+
+function updateSnake() {
+    const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+    if (head.x < 0 || head.x >= snakeCanvas.width || head.y < 0 || head.y >= snakeCanvas.height) {
+        gameOverSnake(); return;
+    }
+    for(let i=0; i<snake.length; i++){
+        if(head.x === snake[i].x && head.y === snake[i].y) { gameOverSnake(); return; }
+    }
+    snake.unshift(head);
+    if (head.x === apple.x && head.y === apple.y) {
+        snakeScore += 10;
+        document.getElementById("snake-score").innerText = snakeScore;
+        apple = {
+            x: Math.floor(Math.random() * (snakeCanvas.width/grid)) * grid,
+            y: Math.floor(Math.random() * (snakeCanvas.height/grid)) * grid
+        };
+        playHover();
+    } else {
+        snake.pop();
+    }
+    drawSnake();
+}
+
+function drawSnake() {
+    const mainColor = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
+    snakeCtx.fillStyle = "black";
+    snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+    snakeCtx.fillStyle = "#ff00d4";
+    snakeCtx.fillRect(apple.x, apple.y, grid-2, grid-2);
+    snakeCtx.fillStyle = mainColor;
+    snake.forEach(part => {
+        snakeCtx.fillRect(part.x, part.y, grid-2, grid-2);
+    });
+}
+
+function gameOverSnake() {
+    if(snakeScore > highScore) {
+        highScore = snakeScore;
+        localStorage.setItem("snakeRecord", highScore);
+        notify(`NOUVEAU RECORD : ${highScore}`, "fa-trophy");
+    }
+    notify(`System Crash: Score ${snakeScore}`, "fa-skull");
+    stopSnake();
+}
+
 // --- TERMINAL SYSTEM ---
 const termInput = document.getElementById("term-input");
 const termBody = document.getElementById("term-body");
@@ -424,11 +547,9 @@ function handleCommand(cmd) {
     let response = "";
 
     switch(cmd) {
-        case 'help': response = "Commands: bio, skills, projects, clear, whoami, exit"; break;
-        case 'bio': response = "Étudiant passionné d'informatique et de cybersécurité."; break;
-        case 'skills': response = "Python, JS, Linux, Docker, HTML/CSS."; break;
-        case 'projects': response = "Chargement des dépôts GitHub Taro002..."; window.location.hash = "#projects"; break;
-        case 'whoami': response = "Guest_User_Node_849"; break;
+        case 'help': response = "Commands: bio, skills, projects, clear, whoami, snake, exit"; break;
+        case 'bio': response = "Étudiant passionné d'informatique."; break;
+        case 'snake': startSnake(); response = "Initialisation du protocole SNAKE..."; break;
         case 'clear': termBody.innerHTML = ""; return;
         case 'exit': toggleTerminal(); return;
         default: response = `Command not found: ${cmd}`;
@@ -451,7 +572,6 @@ function changeColor(hex) {
     });
     if(document.getElementById("cursor")) document.getElementById("cursor").style.borderColor = hex;
     if(document.getElementById("cursor-dot")) document.getElementById("cursor-dot").style.background = hex;
-    notify("Thème visuel mis à jour", "fa-palette");
 }
 const savedColor = localStorage.getItem('userThemeColor');
 if (savedColor) changeColor(savedColor);
@@ -503,7 +623,6 @@ const bootInterval = setInterval(() => {
             document.getElementById("loader").classList.add("hidden");
             document.body.classList.remove("loading");
             startTyping(); fetchRepos();
-            setTimeout(() => notify("Connexion sécurisée établie", "fa-shield-alt"), 1000);
         }, 500);
     }
     document.getElementById("load-bar-progress").style.width = p + "%";
@@ -528,21 +647,20 @@ async function fetchRepos() {
     const response = await fetch('https://api.github.com/users/Taro002/repos?sort=updated');
     const repos = await response.json();
     grid.innerHTML = "";
-    repos.slice(0, 6).forEach((repo, index) => {
+    repos.slice(0, 6).forEach((repo) => {
       const card = document.createElement('a');
       card.href = repo.html_url; card.target = "_blank"; card.className = "card fade visible";
-      card.onmouseenter = playHover;
+      card.style.borderLeft = `2px solid var(--main-color)`;
       card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <i class="far fa-folder-open" style="color:var(--main-color); font-size: 1.2rem;"></i>
-            <span style="font-size: 8px; opacity:0.5;">0${index+1}</span>
+        <div style="display:flex; justify-content:space-between; align-items:start;">
+            <h3 style="font-size:12px; color: var(--main-color);">${repo.name.toUpperCase()}</h3>
+            <i class="fab fa-github" style="font-size:14px; opacity:0.5;"></i>
         </div>
-        <h3 style="font-size:12px; margin-bottom:10px; color: var(--main-color);">${repo.name.toUpperCase()}</h3>
-        <p style="font-size:10px; font-family:var(--font-mono); opacity:0.7;">${repo.description || 'Protocole de données sécurisé...'}</p>
+        <p style="font-size:10px; opacity:0.7; margin: 10px 0;">${repo.description || 'Protocole de données sécurisé...'}</p>
+        <div style="font-size:8px; font-family:var(--font-mono); color:var(--main-color);">LANGUAGE: ${repo.language || 'DATA'}</div>
       `;
       grid.appendChild(card);
     });
-    notify(`GitHub Sync: ${repos.length} dépôts détectés`, "fa-sync");
   } catch(e) { grid.innerHTML = "<p>OFFLINE</p>"; }
 }
 
